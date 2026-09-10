@@ -1,5 +1,6 @@
 {
-  "source": "Отчеты(4).xlsx, август; user-confirmed July carryovers and corrected Europe receipt; USD",
+  "source": "Отчеты.xlsx, август; две жёлтые строки Муслима исключены по указанию пользователя; июльские доплаты учтены в августовской прибыли; USD",
+  "excludedBookingIds": [18, 25],
   "columns": [
     "id",
     "tourists",

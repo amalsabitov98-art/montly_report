@@ -1,4 +1,4 @@
-"""Append August's two screens without changing the seven historical screens."""
+"""Build the May-August report with reconciled July and August figures."""
 import json
 import re
 from collections import defaultdict
@@ -6,18 +6,64 @@ from html import escape
 from pathlib import Path
 
 ROOT = Path(__file__).parent
-source = (ROOT / 'Turon_Tour_Report_May-July_2026 (4).html').read_text()
-data = json.loads((ROOT / 'august-data.json').read_text())
-rows = [dict(zip(data['columns'], r)) for r in data['rows']]
+source = (ROOT / 'Turon_Tour_Report_May-July_2026 (4).html').read_text(encoding='utf-8')
+data = json.loads((ROOT / 'august-data.json').read_text(encoding='utf-8'))
+excluded_booking_ids = set(data.get('excludedBookingIds', []))
+rows = [dict(zip(data['columns'], r)) for r in data['rows'] if r[0] not in excluded_booking_ids]
 logo = re.search(r'<div class="brand"><img src="([^"]+)"', source)[1]
 money = lambda n: '$' + f'{n:,.2f}'.replace(',', ' ').replace('.', ',') if n % 1 else '$' + f'{n:,.0f}'.replace(',', ' ')
 percent = lambda n: f'{n:.1f}'.replace('.', ',') + '%'
+july_sales = 208_751
+july_bookings = 52
+july_tourists = 167
+july_profit = 13_144
+june_sales = 93_949
+june_bookings = 27
+june_tourists = 85
+
+def update_screen(html, screen_number, replacements):
+    pattern = rf'(<section class="[^"]+" data-screen="{screen_number}"[^>]*>)(.*?)(</section>)'
+    match = re.search(pattern, html, re.S)
+    if not match:
+        raise ValueError(f'Screen {screen_number} not found')
+    body = match[2]
+    for old, new in replacements:
+        body = body.replace(old, new)
+    return html[:match.start()] + match[1] + body + match[3] + html[match.end():]
+
+july_replacements = [
+    ('$206 271', '$208 751'), ('$206&nbsp;271', '$208&nbsp;751'),
+    ('>163<', '>167<'), ('6,4%', '6,3%'),
+    ('$3 967', '$4 014'), ('$3&nbsp;967', '$4&nbsp;014'),
+    ('+119,6%', '+122,2%'), ('+91,8%', '+96,5%'), ('+14,0%', '+15,4%'),
+    ('<td class="">Турция</td><td class="">16</td><td class="">55</td><td class="money">$77&nbsp;085</td>',
+     '<td class="">Турция</td><td class="">16</td><td class="">59</td><td class="money">$79&nbsp;635</td>'),
+    ('$16&nbsp;314', '$16&nbsp;244'),
+    ('<td class="sub">Нафталан</td><td class="">1</td><td class="">2</td><td class="money">$2&nbsp;970</td>',
+     '<td class="sub">Нафталан</td><td class="">1</td><td class="">2</td><td class="money">$2&nbsp;900</td>'),
+    ('<td class="">Сарвиноз</td><td class="">18</td><td class="">48</td><td class="money">$59&nbsp;295</td>',
+     '<td class="">Сарвиноз</td><td class="">18</td><td class="">52</td><td class="money">$61&nbsp;775</td>'),
+    ('ПРЯМЫЕ ПРОДАЖИ БЕЗ АГЕНТА</span><b>$26&nbsp;635</b>',
+     'ПРЯМЫЕ ПРОДАЖИ БЕЗ АГЕНТА</span><b>$29&nbsp;615</b>'),
+    ('<td class="">Asialuxe</td><td class="">4</td><td class="">13</td><td class="money">$23&nbsp;090</td>',
+     '<td class="">Asialuxe</td><td class="">4</td><td class="">15</td><td class="money">$22&nbsp;590</td>'),
+    ('По трём броням на $9 670 нетто-стоимость и прибыль не подтверждены и в расчёт финансового результата не включены.',
+     'Прибыль $903 по трём июльским броням получена и учтена в августе, поэтому не включена в прибыль июля.'),
+    ('По трём броням на $9 670 нетто-стоимость и прибыль не подтверждены и в расчёт финансового результата не включены.',
+     'Прибыль $903 по трём июльским броням получена и учтена в августе, поэтому не включена в прибыль июля.'),
+]
+source = update_screen(source, 5, july_replacements)
 sales = sum(r['sales'] for r in rows)
 profit = sum(r['profit'] or 0 for r in rows)
 net = sum(r['net'] for r in rows)
 received = sum(r['received'] for r in rows)
 debt = sum(r['debt'] for r in rows)
 tourists = sum(r['tourists'] for r in rows)
+booking_count = len(rows)
+sales_change = (sales / july_sales - 1) * 100
+average_check = sales / booking_count
+july_average_check = july_sales / july_bookings
+average_check_change = (average_check / july_average_check - 1) * 100
 summary_profit = sum(data['managerSummary'].values())
 commission = summary_profit / 2
 manager_marketing = data['managerMarketingDeduction'] * 4
@@ -68,15 +114,15 @@ finances = ''.join(pair(a,b) for a,b in [
     ('Прибыль по июльским броням',money(prior_profit)),('Всего к распределению',money(summary_profit)),
     ('Маржа августовских броней',percent(profit/sales*100))])
 settle = ''.join(pair(a,b) for a,b in [('Получено по августовским броням',money(received)),('Оплачено партнёрам',money(net)),('Долг партнёрам по строкам','$0'),('Долг клиентов',money(debt))])
-settle += '<p class="augNote">Продажи $157 422 − получено $155 405 = долг $2 017. Это остатки по №18 ($917) и №25 ($1 100). Июльские поступления учитываются отдельно в распределении прибыли.</p>'
+settle += '<p class="augNote">Июльские поступления учитываются отдельно в распределении августовской прибыли и не увеличивают августовские продажи.</p>'
 payout = ''.join(pair(a,b) for a,b in [('Всего к распределению',money(summary_profit)),('Комиссия менеджеров, 50%',money(commission)),('Маркетинг, всего',money(data['marketing'])),('Доля маркетинга офиса',money(office_marketing)),('Выплаты менеджерам после маркетинга',money(manager_payout)),('Остаток офису',money(office))])
 payout += '<p class="augNote">Маркетинг 50/50 с округлением как в Excel: менеджеры $638,40, офис $638,60. Остаток указан до прочих расходов офиса.</p>'
 finance = header('finance') + '<div class="augBody">'
-finance += '<div class="augKpis">'+kpi('ПРОДАЖИ',money(sales),'−23,7% к июлю')+kpi('ПРИБЫЛЬ АВГУСТА',money(summary_profit),'Включая $903 по июльским броням','gold')+kpi('ОСТАТОК ОФИСУ',money(office),'С июльскими доплатами · после маркетинга','gold')+kpi('БРОНИ / ТУРИСТЫ','37 / 124','Средний чек '+money(round(sales/len(rows))))+'</div>'
+finance += '<div class="augKpis">'+kpi('ПРОДАЖИ',money(sales),percent(sales_change)+' к июлю')+kpi('ПРИБЫЛЬ АВГУСТА',money(summary_profit),'Включая $903 по июльским броням','gold')+kpi('ОСТАТОК ОФИСУ',money(office),'С июльскими доплатами · после маркетинга','gold')+kpi('БРОНИ / ТУРИСТЫ',f'{booking_count} / {tourists}','Средний чек '+money(round(average_check)))+'</div>'
 finance += notice + '<div class="augFinanceGrid">'+panel('Финансы месяца','<div class="augPairs">'+finances+'</div>')+panel('Распределение прибыли','<div class="augPairs">'+payout+'</div>')+panel('Взаиморасчёты','<div class="augPairs">'+settle+'</div>')+'</div>'
-finance += '<footer class="augFoot">Данные по месяцу отчёта, а не вылета. Прибыль №18 ($158,20) и №25 ($116,60) отложена до последующей оплаты и пока не включена. Продажи и остатки долга этих броней учтены.</footer></div>'
+finance += '<footer class="augFoot">Данные сгруппированы по месяцу бронирования. Июльские доплаты $903 отражены только в августовской прибыли.</footer></div>'
 
-directions = header('directions')+'<div class="augBody">'+tabs('directions')+panel('Продажи по направлениям',table('direction','Направление'))+'<footer class="augFoot">Прибыль — сумма заполненных значений по бронированиям, до комиссий и маркетинга. * В Таиланде две брони без указанной прибыли. Грузия + Турция сохранена как отдельное направление источника.</footer></div>'
+directions = header('directions')+'<div class="augBody">'+tabs('directions')+panel('Продажи по направлениям',table('direction','Направление'))+'<footer class="augFoot">Прибыль — сумма заполненных значений по бронированиям, до комиссий и маркетинга. Грузия + Турция сохранена как отдельное направление источника.</footer></div>'
 manager_rows=''
 for name,g in groups('manager'):
     summary=data['managerSummary'][name]
@@ -87,7 +133,7 @@ for name,g in groups('manager'):
 managers = header('managers')+'<div class="augBody">'+tabs('managers')+notice+panel('Менеджеры: продажи и распределение',f'<div class="augTableScroll tableWrap"><table class="dataTable"><thead><tr><th>Менеджер</th><th>Брони</th><th>Туристы</th><th>Продажи</th><th>По августовским<br>броням</th><th>Всего к<br>распределению</th><th>Получено<br>по июльским</th><th>Комиссия</th><th>Маркетинг</th><th>К выплате</th></tr></thead><tbody>{manager_rows}</tbody></table></div>')+'<footer class="augFoot">Удержание маркетинга по Excel: по $159,60 у четырёх менеджеров, всего $638,40. Абдулкарим — без удержания. К выплате менеджерам $6 236,60; офису остаётся $6 236,40. Доплаты из июля не увеличивают августовские продажи.</footer></div>'
 own=sum(r['sales'] for r in rows if r['partner']=='Turon')
 direct=sum(r['sales'] for r in rows if r['partner']=='Individual')
-partners=header('partners')+'<div class="augBody">'+tabs('partners')+f'<div class="augStrips"><span>Собственный продукт Turon <b>{money(own)}</b></span><span>Individual — отдельно от внешних партнёров <b>{money(direct)}</b></span></div>'+panel('Внешние партнёры',table('partner','Партнёр',('Turon','Individual')))+'<footer class="augFoot">Прибыль — по строкам бронирований. Составные названия партнёров сохранены. * У Kompas две брони без указанной прибыли.</footer></div>'
+partners=header('partners')+'<div class="augBody">'+tabs('partners')+f'<div class="augStrips"><span>Собственный продукт Turon <b>{money(own)}</b></span><span>Individual — отдельно от внешних партнёров <b>{money(direct)}</b></span></div>'+panel('Внешние партнёры',table('partner','Партнёр',('Turon','Individual')))+'<footer class="augFoot">Прибыль — по строкам бронирований. Составные названия партнёров сохранены.</footer></div>'
 dashboard='<section class="screen dashboard august" data-screen="7" id="august">'+''.join(f'<div class="dashboardVariant {"active" if v=="finance" else ""}" data-variant="{v}">{content}</div>' for v,content in [('finance',finance),('directions',directions),('managers',managers),('partners',partners)])+'</section>'
 
 topdirs=groups('direction')[:3]
@@ -96,20 +142,47 @@ def ranking(key,exclude=()):
     return '<ol>'+''.join(f'<li><span>{name}</span><b>{money(g["sales"])}</b></li>' for name,g in groups(key,exclude)[:3])+'</ol>'
 summary=f'''<section class="screen augustSummary" data-screen="8" id="august-summary"><div class="augSummaryInner">
 <header class="augSummaryBrand"><img src="{logo}" alt="Turon Tour"><span>TURON TOUR <em>/ ИТОГИ АВГУСТА</em></span><span class="augSummaryIndex">08 / 2026</span></header>
-<div class="augSummaryTitle"><h1>АВГУСТ 2026</h1><p>37 бронирований · 124 туриста</p></div>
-<div class="augSummaryMain"><article class="augHeroMetric"><span>ПРОДАЖИ МЕСЯЦА</span><strong>{money(sales)}</strong><p>−23,7% к июлю</p><div>Средний чек <b>{money(round(sales/37))}</b><small>+7,3% к июлю</small></div></article>
+<div class="augSummaryTitle"><h1>АВГУСТ 2026</h1><p>{booking_count} бронирований · {tourists} туристов</p></div>
+<div class="augSummaryMain"><article class="augHeroMetric"><span>ПРОДАЖИ МЕСЯЦА</span><strong>{money(sales)}</strong><p>{percent(sales_change)} к июлю</p><div>Средний чек <b>{money(round(average_check))}</b><small>{percent(average_check_change)} к июлю</small></div></article>
 <div class="augSummaryRight"><article class="augGold"><span>ПРИБЫЛЬ АВГУСТА</span><strong>{money(summary_profit)}</strong><p>{money(profit)} по августовским броням + {money(prior_profit)}, полученные в августе по июльским</p></article><article class="augGold"><span>ОСТАТОК ОФИСУ</span><strong>{money(office)}</strong><p>С июльскими доплатами · после комиссий и маркетинга</p></article></div></div>
 <div class="augSummaryBottom"><article><h3>Топ-3 направления</h3><div class="augTopValue">{money(topvalue)} <small>{percent(topvalue/sales*100)} продаж</small></div><p>{' · '.join(n for n,_ in topdirs)}</p></article><article><h3>Топ-3 менеджера по продажам</h3>{ranking('manager')}</article><article><h3>Топ-3 внешних партнёра</h3>{ranking('partner',('Turon','Individual'))}</article></div>
-<footer class="augSummaryFoot"><span>Собственный продукт {money(own)} · Individual {money(direct)} · маркетинг {money(data['marketing'])}, 50/50</span><span>Долг клиентов {money(debt)}. Прибыль двух неоплаченных полностью броней отложена до последующей оплаты.</span></footer>
+<footer class="augSummaryFoot"><span>Собственный продукт {money(own)} · Individual {money(direct)} · маркетинг {money(data['marketing'])}, 50/50</span><span>Июльская прибыль {money(prior_profit)} получена и учтена в августе.</span></footer>
 </div></section>'''
+
+july_sales_change = (july_sales / june_sales - 1) * 100
+july_average = july_sales / july_bookings
+july_average_change = (july_average / (june_sales / june_bookings) - 1) * 100
+july_top_directions = 79_635 + 38_330 + 27_030
+july_summary = f'''<section class="screen augustSummary julySummary" data-screen="6" id="july-summary"><div class="augSummaryInner">
+<header class="augSummaryBrand"><img src="{logo}" alt="Turon Tour"><span>TURON TOUR <em>/ ИТОГИ ИЮЛЯ</em></span><span class="augSummaryIndex">07 / 2026</span></header>
+<div class="augSummaryTitle"><h1>ИЮЛЬ 2026</h1><p>{july_bookings} бронирования · {july_tourists} туристов</p></div>
+<div class="augSummaryMain"><article class="augHeroMetric"><span>ПРОДАЖИ МЕСЯЦА</span><strong>{money(july_sales)}</strong><p>+{percent(july_sales_change)} к июню</p><div>Средний чек <b>{money(round(july_average))}</b><small>+{percent(july_average_change)} к июню</small></div></article>
+<div class="augSummaryRight"><article class="augGold"><span>ПРИБЫЛЬ ИЮЛЯ</span><strong>{money(july_profit)}</strong><p>Маржа {percent(july_profit / july_sales * 100)}. Доплата по трём июльским броням отражена в августе.</p></article><article class="augGold"><span>ТУРИСТЫ</span><strong>{july_tourists}</strong><p>+{percent((july_tourists / june_tourists - 1) * 100)} к июню</p></article></div></div>
+<div class="augSummaryBottom"><article><h3>Топ-3 направления</h3><div class="augTopValue">{money(july_top_directions)} <small>{percent(july_top_directions / july_sales * 100)} продаж</small></div><p>Турция · Шарм-эль-Шейх · Вьетнам</p></article><article><h3>Топ-3 менеджера по продажам</h3><ol><li><span>Сарвиноз</span><b>$61 775</b></li><li><span>Муслимжон</span><b>$59 437</b></li><li><span>Азиза</span><b>$47 975</b></li></ol></article><article><h3>Топ-3 внешних партнёра</h3><ol><li><span>Kazunion</span><b>$27 050</b></li><li><span>Asialuxe</span><b>$22 590</b></li><li><span>Kompas</span><b>$18 880</b></li></ol></article></div>
+<footer class="augSummaryFoot"><span>Собственный продукт $22 985 · прямые продажи без агента $29 615</span><span>Прибыль $903 по июльским броням получена и учтена в августе.</span></footer>
+</div></section>'''
+
+source = re.sub(
+    r'<section class="screen [^"]*" data-screen="6"[^>]*>.*?</section>',
+    july_summary,
+    source,
+    count=1,
+    flags=re.S,
+)
+cover = '<section class="screen cover active" data-screen="0" id="cover"><div class="visualFrame"><img class="visualBackdrop" src="cover-may-august-2026.png" alt="Отчёт Turon Tour по продажам за май — август 2026"></div></section>'
+source = re.sub(
+    r'<section class="screen cover[^>]*>.*?</section>',
+    cover,
+    source,
+    count=1,
+    flags=re.S,
+)
 
 # Resolved reconciliation commentary is omitted from the presentation.
 dashboard = re.sub(r'<aside class="augNotice">.*?</aside>', '', dashboard, flags=re.S)
 dashboard = re.sub(r'<p class="augNote">.*?</p>', '', dashboard, flags=re.S)
 dashboard = re.sub(r'<footer class="augFoot">.*?</footer>', '', dashboard, flags=re.S)
 dashboard = dashboard.replace('<sup>*</sup>', '')
-summary = summary.replace('Долг клиентов {money(debt)}. Прибыль двух неоплаченных полностью броней отложена до последующей оплаты.', 'Долг клиентов {money(debt)}')
-summary = re.sub(r'Прибыль двух неоплаченных полностью броней отложена до последующей оплаты\.', '', summary)
 
 css='''
 /* August screens are scoped; historical screens are left intact. */
@@ -133,6 +206,6 @@ result=result.replace('  go(0);','  go(location.hash === "#august-summary" ? 8 :
 result=result.replace("const w=e.target.closest('.tableWrap');if(w&&w.scrollHeight>w.clientHeight+2)e.stopPropagation();", "for(let w=e.target.closest('.tableWrap, .augBody, .augustSummary');w;w=w.parentElement?.closest('.tableWrap, .augBody, .augustSummary')){const max=w.scrollHeight-w.clientHeight;if(max>2&&((e.deltaY>0&&w.scrollTop<max-2)||(e.deltaY<0&&w.scrollTop>2))){e.stopPropagation();return;}}")
 result=result.replace("if(touchStart===null)return;const d=", "if(touchStart===null)return;const area=e.target.closest('.augBody, .augustSummary');if(area&&area.scrollHeight>area.clientHeight+2){touchStart=null;return;}const d=")
 path=ROOT/'Turon_Tour_August_2026_FINAL.html'
-path.write_text(result)
-(ROOT/'index.html').write_text('''<!doctype html><html lang="ru"><meta charset="utf-8"><title>Turon Tour — Отчёт</title><script>location.replace('Turon_Tour_August_2026_FINAL.html'+(location.hash||'#august'))</script><a href="Turon_Tour_August_2026_FINAL.html#august">Открыть отчёт за август</a></html>''')
+path.write_text(result, encoding='utf-8')
+(ROOT/'index.html').write_text('''<!doctype html><html lang="ru"><meta charset="utf-8"><title>Turon Tour — Отчёт</title><script>location.replace('Turon_Tour_August_2026_FINAL.html'+(location.hash||'#cover'))</script><a href="Turon_Tour_August_2026_FINAL.html#cover">Открыть отчёт</a></html>''', encoding='utf-8')
 print(json.dumps(dict(sales=sales,tourists=tourists,profit_rows=profit,profit_summary=summary_profit,net=net,received=received,debt_stated=debt,office_from_summary=office,own_product=own,individual=direct,top_directions=topdirs,output=str(path)),ensure_ascii=False,indent=2))
