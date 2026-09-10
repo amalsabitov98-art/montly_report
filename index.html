@@ -86,5 +86,5 @@
   },{passive:true});
   window.addEventListener('touchstart',(e)=>touchStart=e.touches[0].clientY,{passive:true});
   window.addEventListener('touchend',(e)=>{if(touchStart===null)return;const area=e.target.closest('.augBody, .augustSummary');if(area&&area.scrollHeight>area.clientHeight+2){touchStart=null;return;}const d=touchStart-e.changedTouches[0].clientY;if(Math.abs(d)>55)go(current+(d>0?1:-1));touchStart=null},{passive:true});
-  go(location.hash === "#august-summary" ? 8 : location.hash === "#cover" ? 0 : 7);
+  const startScreen={"#august":7,"#august-summary":8}[location.hash]??0;go(startScreen);
 })();</script><script>(()=>{document.addEventListener('click',e=>{const t=e.target.closest('.tailToggle');if(!t)return;const tb=t.closest('tbody');const open=!tb.classList.contains('tailOpen');tb.classList.toggle('tailOpen',open);tb.querySelectorAll('.tailRow').forEach(r=>{r.hidden=!open});const c=t.querySelector('.tailChev');if(c)c.textContent=open?'\u2212':'+';e.stopPropagation();},true);document.addEventListener('wheel',e=>{for(let w=e.target.closest('.tableWrap, .augBody, .augustSummary');w;w=w.parentElement?.closest('.tableWrap, .augBody, .augustSummary')){const max=w.scrollHeight-w.clientHeight;if(max>2&&((e.deltaY>0&&w.scrollTop<max-2)||(e.deltaY<0&&w.scrollTop>2))){e.stopPropagation();return;}}},true);})();</script></body></html>
