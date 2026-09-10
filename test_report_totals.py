@@ -69,6 +69,16 @@ class ReportTotalsTest(unittest.TestCase):
             cover,
         )
 
+    def test_plain_url_starts_on_cover(self):
+        self.assertIn(
+            'const startScreen={"#august":7,"#august-summary":8}[location.hash]??0;go(startScreen);',
+            self.html,
+        )
+        self.assertNotIn(
+            'go(location.hash === "#august-summary" ? 8 : location.hash === "#cover" ? 0 : 7);',
+            self.html,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -201,7 +201,7 @@ result=source.replace('</style>',css+'</style>',1)
 result=result.replace('<nav class="rail"',dashboard+summary+'<nav class="rail"',1)
 result=result.replace('</nav></main>','<button data-go="7" aria-label="Август — дашборд"><span>Август — дашборд</span></button><button data-go="8" aria-label="Итоги августа"><span>Итоги августа</span></button></nav></main>',1)
 result=result.replace('<title>Turon Tour — Отчёт по продажам</title>','<title>Turon Tour — Отчёт по продажам, май–август 2026</title>')
-result=result.replace('  go(0);','  go(location.hash === "#august-summary" ? 8 : location.hash === "#cover" ? 0 : 7);')
+result=result.replace('  go(0);','  const startScreen={"#august":7,"#august-summary":8}[location.hash]??0;go(startScreen);')
 # Internal August scrolling should not advance screens unexpectedly.
 result=result.replace("const w=e.target.closest('.tableWrap');if(w&&w.scrollHeight>w.clientHeight+2)e.stopPropagation();", "for(let w=e.target.closest('.tableWrap, .augBody, .augustSummary');w;w=w.parentElement?.closest('.tableWrap, .augBody, .augustSummary')){const max=w.scrollHeight-w.clientHeight;if(max>2&&((e.deltaY>0&&w.scrollTop<max-2)||(e.deltaY<0&&w.scrollTop>2))){e.stopPropagation();return;}}")
 result=result.replace("if(touchStart===null)return;const d=", "if(touchStart===null)return;const area=e.target.closest('.augBody, .augustSummary');if(area&&area.scrollHeight>area.clientHeight+2){touchStart=null;return;}const d=")
