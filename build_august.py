@@ -169,7 +169,7 @@ source = re.sub(
     count=1,
     flags=re.S,
 )
-cover = '<section class="screen cover active" data-screen="0" id="cover"><div class="visualFrame"><img class="visualBackdrop" src="cover-may-august-2026.png" alt="Отчёт Turon Tour по продажам за май — август 2026"></div></section>'
+cover = '<section class="screen cover active" data-screen="0" id="cover"><div class="visualFrame"><img class="visualBackdrop" src="cover-may-august-2026.png" alt="" aria-hidden="true"><div class="visualShade" aria-hidden="true"></div><img class="visualArtwork" src="cover-may-august-2026.png" alt="Отчёт Turon Tour по продажам за май — август 2026"></div></section>'
 source = re.sub(
     r'<section class="screen cover[^>]*>.*?</section>',
     cover,
