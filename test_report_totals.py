@@ -60,12 +60,12 @@ class ReportTotalsTest(unittest.TestCase):
         self.assertEqual(sum(tourists), 467)
         self.assertEqual(sum(sales), 584_120)
         self.assertEqual(sum(profit), 40_463)
-        self.assertIn("cover-may-august-2026.png", self.html)
+        self.assertIn("cover-gross-profit-may-august-2026.png", self.html)
 
     def test_cover_has_unblurred_foreground_artwork(self):
         cover = section(self.html, 0)
         self.assertIn(
-            '<img class="visualArtwork" src="cover-may-august-2026.png"',
+            '<img class="visualArtwork" src="cover-gross-profit-may-august-2026.png"',
             cover,
         )
 
