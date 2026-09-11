@@ -69,6 +69,22 @@ class ReportTotalsTest(unittest.TestCase):
             cover,
         )
 
+    def test_cover_identifies_gross_profit_and_profit_per_tourist(self):
+        cover = section(self.html, 0)
+        self.assertIn("Отчёт Turon Tour по продажам и валовой прибыли", cover)
+        self.assertIn("$40 463 валовой прибыли", cover)
+        self.assertIn("$86,64 на одного туриста", cover)
+        self.assertIn(
+            "<title>Turon Tour — Отчёт по продажам и валовой прибыли, май–август 2026</title>",
+            self.html,
+        )
+
+    def test_august_does_not_show_office_remainder(self):
+        august = section(self.html, 7)
+        august_summary = section(self.html, 8)
+        for screen in (august, august_summary):
+            self.assertNotRegex(screen, r"(?i)остаток\s+офису")
+
     def test_plain_url_starts_on_cover(self):
         self.assertIn(
             'const startScreen={"#august":7,"#august-summary":8}[location.hash]??0;go(startScreen);',
