@@ -168,7 +168,7 @@ source = re.sub(
     count=1,
     flags=re.S,
 )
-cover = '<section class="screen cover active" data-screen="0" id="cover"><div class="visualFrame"><img class="visualBackdrop" src="cover-gross-profit-may-august-2026.png" alt="" aria-hidden="true"><div class="visualShade" aria-hidden="true"></div><img class="visualArtwork" src="cover-gross-profit-may-august-2026.png" alt="Отчёт Turon Tour по продажам и валовой прибыли за май — август 2026: 467 туристов, $40 463 валовой прибыли, $86,64 на одного туриста"></div></section>'
+cover = '<section class="screen cover active" data-screen="0" id="cover"><div class="visualFrame"><img class="visualBackdrop" src="cover-gross-profit-per-tourist-may-august-2026.png" alt="" aria-hidden="true"><div class="visualShade" aria-hidden="true"></div><img class="visualArtwork" src="cover-gross-profit-per-tourist-may-august-2026.png" alt="Отчёт Turon Tour по продажам и валовой прибыли за май — август 2026: 467 туристов, $40 463 валовой прибыли, $86,64 валовой прибыли с туриста"></div></section>'
 source = re.sub(
     r'<section class="screen cover[^>]*>.*?</section>',
     cover,

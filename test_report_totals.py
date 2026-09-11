@@ -60,12 +60,12 @@ class ReportTotalsTest(unittest.TestCase):
         self.assertEqual(sum(tourists), 467)
         self.assertEqual(sum(sales), 584_120)
         self.assertEqual(sum(profit), 40_463)
-        self.assertIn("cover-gross-profit-may-august-2026.png", self.html)
+        self.assertIn("cover-gross-profit-per-tourist-may-august-2026.png", self.html)
 
     def test_cover_has_unblurred_foreground_artwork(self):
         cover = section(self.html, 0)
         self.assertIn(
-            '<img class="visualArtwork" src="cover-gross-profit-may-august-2026.png"',
+            '<img class="visualArtwork" src="cover-gross-profit-per-tourist-may-august-2026.png"',
             cover,
         )
 
@@ -73,7 +73,7 @@ class ReportTotalsTest(unittest.TestCase):
         cover = section(self.html, 0)
         self.assertIn("Отчёт Turon Tour по продажам и валовой прибыли", cover)
         self.assertIn("$40 463 валовой прибыли", cover)
-        self.assertIn("$86,64 на одного туриста", cover)
+        self.assertIn("$86,64 валовой прибыли с туриста", cover)
         self.assertIn(
             "<title>Turon Tour — Отчёт по продажам и валовой прибыли, май–август 2026</title>",
             self.html,
