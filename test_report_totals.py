@@ -70,11 +70,12 @@ class ReportTotalsTest(unittest.TestCase):
         self.assertEqual(sum(sales), 587_854)
         self.assertEqual(sum(profit), 40_320)
 
-    def test_cover_is_rendered_from_current_totals(self):
+    def test_cover_uses_the_original_branded_artwork(self):
         cover = section(self.html, 0)
-        for expected in ("142", "467", "$587 854", "$40 320", "$86,34"):
-            self.assertIn(expected, cover)
-        self.assertNotIn("visualArtwork", cover)
+        self.assertIn("visualFrame", cover)
+        self.assertIn("visualArtwork", cover)
+        self.assertIn("cover-gross-profit-per-tourist-may-august-2026-v2.png", cover)
+        self.assertNotIn("reportCover", cover)
 
     def test_cover_identifies_gross_profit_and_profit_per_tourist(self):
         cover = section(self.html, 0)

@@ -184,13 +184,8 @@ source = re.sub(
     count=1,
     flags=re.S,
 )
-cover = f'''<section class="screen cover active" data-screen="0" id="cover"><div class="reportCover">
-<header class="coverBrand"><img src="{logo}" alt="Turon Tour"><div><b>TURON TOUR</b><span>УПРАВЛЕНЧЕСКИЙ ОТЧЁТ</span></div><em>05—08 / 2026</em></header>
-<main class="coverCopy"><p>МАЙ — АВГУСТ 2026</p><h1>Отчёт Turon Tour по продажам и валовой прибыли</h1><div class="coverMetrics">
-<article><span>БРОНИРОВАНИЯ</span><strong>142</strong></article><article><span>ТУРИСТЫ</span><strong>467</strong></article><article><span>ПРОДАЖИ</span><strong>$587 854</strong></article><article class="gold"><span>ВАЛОВАЯ ПРИБЫЛЬ</span><strong>$40 320</strong></article><article class="gold"><span>ПРИБЫЛЬ С ТУРИСТА</span><strong>$86,34</strong></article>
-</div><p class="coverDefinition">$40 320 валовой прибыли · $86,34 валовой прибыли с туриста</p></main>
-<footer class="coverFoot">Итоги рассчитаны по месяцу бронирования. Июльская прибыль $903 признана в августе.</footer>
-</div></section>'''
+cover_art = 'cover-gross-profit-per-tourist-may-august-2026-v2.png'
+cover = f'''<section class="screen cover active" data-screen="0" id="cover"><div class="visualFrame"><img class="visualBackdrop" src="{cover_art}" alt="" aria-hidden="true"><div class="visualShade" aria-hidden="true"></div><img class="visualArtwork" src="{cover_art}" alt="Отчёт Turon Tour по продажам и валовой прибыли за май — август 2026: 467 туристов, $40 320 валовой прибыли, $86,34 валовой прибыли с туриста"></div></section>'''
 source = re.sub(
     r'<section class="screen cover[^>]*>.*?</section>',
     cover,
