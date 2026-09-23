@@ -13,10 +13,19 @@ rows = [dict(zip(data['columns'], r)) for r in data['rows'] if r[0] not in exclu
 logo = re.search(r'<div class="brand"><img src="([^"]+)"', source)[1]
 money = lambda n: '$' + f'{n:,.2f}'.replace(',', ' ').replace('.', ',') if n % 1 else '$' + f'{n:,.0f}'.replace(',', ' ')
 percent = lambda n: f'{n:.1f}'.replace('.', ',') + '%'
+def count_word(n, one, few, many):
+    if 11 <= n % 100 <= 14:
+        return many
+    if n % 10 == 1:
+        return one
+    if 2 <= n % 10 <= 4:
+        return few
+    return many
+
 july_sales = 208_751
 july_bookings = 52
-july_tourists = 167
-july_profit = 13_144
+july_tourists = 163
+july_profit = 13_001
 june_sales = 93_949
 june_bookings = 27
 june_tourists = 85
@@ -33,24 +42,31 @@ def update_screen(html, screen_number, replacements):
 
 july_replacements = [
     ('$206 271', '$208 751'), ('$206&nbsp;271', '$208&nbsp;751'),
-    ('>163<', '>167<'), ('6,4%', '6,3%'),
+    ('6,4%', '6,2%'),
     ('$3 967', '$4 014'), ('$3&nbsp;967', '$4&nbsp;014'),
-    ('+119,6%', '+122,2%'), ('+91,8%', '+96,5%'), ('+14,0%', '+15,4%'),
+    ('+119,6%', '+122,2%'), ('+14,0%', '+15,4%'), ('+142,6%', '+140,0%'),
+    ('$13 144', '$13 001'), ('$13&nbsp;144', '$13&nbsp;001'),
+    ('$186 247', '$194 847'), ('$186&nbsp;247', '$194&nbsp;847'),
+    ('$197 451', '$206 651'), ('$197&nbsp;451', '$206&nbsp;651'),
+    ('$173 185', '$181 785'), ('$173&nbsp;185', '$181&nbsp;785'),
+    ('$8 820', '$2 100'), ('$8&nbsp;820', '$2&nbsp;100'),
     ('<td class="">Турция</td><td class="">16</td><td class="">55</td><td class="money">$77&nbsp;085</td>',
-     '<td class="">Турция</td><td class="">16</td><td class="">59</td><td class="money">$79&nbsp;635</td>'),
+     '<td class="">Турция</td><td class="">16</td><td class="">55</td><td class="money">$79&nbsp;635</td>'),
     ('$16&nbsp;314', '$16&nbsp;244'),
     ('<td class="sub">Нафталан</td><td class="">1</td><td class="">2</td><td class="money">$2&nbsp;970</td>',
      '<td class="sub">Нафталан</td><td class="">1</td><td class="">2</td><td class="money">$2&nbsp;900</td>'),
     ('<td class="">Сарвиноз</td><td class="">18</td><td class="">48</td><td class="money">$59&nbsp;295</td>',
-     '<td class="">Сарвиноз</td><td class="">18</td><td class="">52</td><td class="money">$61&nbsp;775</td>'),
+     '<td class="">Сарвиноз</td><td class="">18</td><td class="">48</td><td class="money">$61&nbsp;775</td>'),
+    ('<td class="">Шахноза</td><td class="">3</td><td class="">6</td><td class="money">$4&nbsp;094</td><td class="profit">$306</td>',
+     '<td class="">Шахноза</td><td class="">3</td><td class="">6</td><td class="money">$4&nbsp;094</td><td class="profit">$163</td>'),
     ('ПРЯМЫЕ ПРОДАЖИ БЕЗ АГЕНТА</span><b>$26&nbsp;635</b>',
      'ПРЯМЫЕ ПРОДАЖИ БЕЗ АГЕНТА</span><b>$29&nbsp;615</b>'),
     ('<td class="">Asialuxe</td><td class="">4</td><td class="">13</td><td class="money">$23&nbsp;090</td>',
-     '<td class="">Asialuxe</td><td class="">4</td><td class="">15</td><td class="money">$22&nbsp;590</td>'),
+     '<td class="">Asialuxe</td><td class="">4</td><td class="">13</td><td class="money">$22&nbsp;590</td>'),
     ('По трём броням на $9 670 нетто-стоимость и прибыль не подтверждены и в расчёт финансового результата не включены.',
-     'Прибыль $903 по трём июльским броням получена и учтена в августе, поэтому не включена в прибыль июля.'),
+     'Прибыль $903 по июльским бронированиям получена и учтена в августе, поэтому не включена в прибыль июля.'),
     ('По трём броням на $9 670 нетто-стоимость и прибыль не подтверждены и в расчёт финансового результата не включены.',
-     'Прибыль $903 по трём июльским броням получена и учтена в августе, поэтому не включена в прибыль июля.'),
+     'Прибыль $903 по июльским бронированиям получена и учтена в августе, поэтому не включена в прибыль июля.'),
 ]
 source = update_screen(source, 5, july_replacements)
 sales = sum(r['sales'] for r in rows)
@@ -141,7 +157,7 @@ def ranking(key,exclude=()):
     return '<ol>'+''.join(f'<li><span>{name}</span><b>{money(g["sales"])}</b></li>' for name,g in groups(key,exclude)[:3])+'</ol>'
 summary=f'''<section class="screen augustSummary" data-screen="8" id="august-summary"><div class="augSummaryInner">
 <header class="augSummaryBrand"><img src="{logo}" alt="Turon Tour"><span>TURON TOUR <em>/ ИТОГИ АВГУСТА</em></span><span class="augSummaryIndex">08 / 2026</span></header>
-<div class="augSummaryTitle"><h1>АВГУСТ 2026</h1><p>{booking_count} бронирований · {tourists} туристов</p></div>
+<div class="augSummaryTitle"><h1>АВГУСТ 2026</h1><p>{booking_count} {count_word(booking_count, 'бронирование', 'бронирования', 'бронирований')} · {tourists} {count_word(tourists, 'турист', 'туриста', 'туристов')}</p></div>
 <div class="augSummaryMain"><article class="augHeroMetric"><span>ПРОДАЖИ МЕСЯЦА</span><strong>{money(sales)}</strong><p>{percent(sales_change)} к июлю</p><div>Средний чек <b>{money(round(average_check))}</b><small>{percent(average_check_change)} к июлю</small></div></article>
 <div class="augSummaryRight"><article class="augGold"><span>ПРИБЫЛЬ АВГУСТА</span><strong>{money(summary_profit)}</strong><p>{money(profit)} по августовским броням + {money(prior_profit)}, полученные в августе по июльским</p></article></div></div>
 <div class="augSummaryBottom"><article><h3>Топ-3 направления</h3><div class="augTopValue">{money(topvalue)} <small>{percent(topvalue/sales*100)} продаж</small></div><p>{' · '.join(n for n,_ in topdirs)}</p></article><article><h3>Топ-3 менеджера по продажам</h3>{ranking('manager')}</article><article><h3>Топ-3 внешних партнёра</h3>{ranking('partner',('Turon','Individual'))}</article></div>
@@ -154,9 +170,9 @@ july_average_change = (july_average / (june_sales / june_bookings) - 1) * 100
 july_top_directions = 79_635 + 38_330 + 27_030
 july_summary = f'''<section class="screen augustSummary julySummary" data-screen="6" id="july-summary"><div class="augSummaryInner">
 <header class="augSummaryBrand"><img src="{logo}" alt="Turon Tour"><span>TURON TOUR <em>/ ИТОГИ ИЮЛЯ</em></span><span class="augSummaryIndex">07 / 2026</span></header>
-<div class="augSummaryTitle"><h1>ИЮЛЬ 2026</h1><p>{july_bookings} бронирования · {july_tourists} туристов</p></div>
+<div class="augSummaryTitle"><h1>ИЮЛЬ 2026</h1><p>{july_bookings} {count_word(july_bookings, 'бронирование', 'бронирования', 'бронирований')} · {july_tourists} {count_word(july_tourists, 'турист', 'туриста', 'туристов')}</p></div>
 <div class="augSummaryMain"><article class="augHeroMetric"><span>ПРОДАЖИ МЕСЯЦА</span><strong>{money(july_sales)}</strong><p>+{percent(july_sales_change)} к июню</p><div>Средний чек <b>{money(round(july_average))}</b><small>+{percent(july_average_change)} к июню</small></div></article>
-<div class="augSummaryRight"><article class="augGold"><span>ПРИБЫЛЬ ИЮЛЯ</span><strong>{money(july_profit)}</strong><p>Маржа {percent(july_profit / july_sales * 100)}. Доплата по трём июльским броням отражена в августе.</p></article><article class="augGold"><span>ТУРИСТЫ</span><strong>{july_tourists}</strong><p>+{percent((july_tourists / june_tourists - 1) * 100)} к июню</p></article></div></div>
+<div class="augSummaryRight"><article class="augGold"><span>ПРИБЫЛЬ ИЮЛЯ</span><strong>{money(july_profit)}</strong><p>Маржа {percent(july_profit / july_sales * 100)}. Прибыль $903 по июльским бронированиям отражена в августе.</p></article><article class="augGold"><span>ТУРИСТЫ</span><strong>{july_tourists}</strong><p>+{percent((july_tourists / june_tourists - 1) * 100)} к июню</p></article></div></div>
 <div class="augSummaryBottom"><article><h3>Топ-3 направления</h3><div class="augTopValue">{money(july_top_directions)} <small>{percent(july_top_directions / july_sales * 100)} продаж</small></div><p>Турция · Шарм-эль-Шейх · Вьетнам</p></article><article><h3>Топ-3 менеджера по продажам</h3><ol><li><span>Сарвиноз</span><b>$61 775</b></li><li><span>Муслимжон</span><b>$59 437</b></li><li><span>Азиза</span><b>$47 975</b></li></ol></article><article><h3>Топ-3 внешних партнёра</h3><ol><li><span>Kazunion</span><b>$27 050</b></li><li><span>Asialuxe</span><b>$22 590</b></li><li><span>Kompas</span><b>$18 880</b></li></ol></article></div>
 <footer class="augSummaryFoot"><span>Собственный продукт $22 985 · прямые продажи без агента $29 615</span><span>Прибыль $903 по июльским броням получена и учтена в августе.</span></footer>
 </div></section>'''
@@ -168,7 +184,13 @@ source = re.sub(
     count=1,
     flags=re.S,
 )
-cover = '<section class="screen cover active" data-screen="0" id="cover"><div class="visualFrame"><img class="visualBackdrop" src="cover-gross-profit-per-tourist-may-august-2026.png" alt="" aria-hidden="true"><div class="visualShade" aria-hidden="true"></div><img class="visualArtwork" src="cover-gross-profit-per-tourist-may-august-2026.png" alt="Отчёт Turon Tour по продажам и валовой прибыли за май — август 2026: 467 туристов, $40 463 валовой прибыли, $86,64 валовой прибыли с туриста"></div></section>'
+cover = f'''<section class="screen cover active" data-screen="0" id="cover"><div class="reportCover">
+<header class="coverBrand"><img src="{logo}" alt="Turon Tour"><div><b>TURON TOUR</b><span>УПРАВЛЕНЧЕСКИЙ ОТЧЁТ</span></div><em>05—08 / 2026</em></header>
+<main class="coverCopy"><p>МАЙ — АВГУСТ 2026</p><h1>Отчёт Turon Tour по продажам и валовой прибыли</h1><div class="coverMetrics">
+<article><span>БРОНИРОВАНИЯ</span><strong>142</strong></article><article><span>ТУРИСТЫ</span><strong>467</strong></article><article><span>ПРОДАЖИ</span><strong>$587 854</strong></article><article class="gold"><span>ВАЛОВАЯ ПРИБЫЛЬ</span><strong>$40 320</strong></article><article class="gold"><span>ПРИБЫЛЬ С ТУРИСТА</span><strong>$86,34</strong></article>
+</div><p class="coverDefinition">$40 320 валовой прибыли · $86,34 валовой прибыли с туриста</p></main>
+<footer class="coverFoot">Итоги рассчитаны по месяцу бронирования. Июльская прибыль $903 признана в августе.</footer>
+</div></section>'''
 source = re.sub(
     r'<section class="screen cover[^>]*>.*?</section>',
     cover,
@@ -185,6 +207,7 @@ dashboard = dashboard.replace('<sup>*</sup>', '')
 
 css='''
 /* August screens are scoped; historical screens are left intact. */
+.cover{background:#020b12!important;overflow:hidden}.reportCover{height:100vh;box-sizing:border-box;padding:30px 46px 24px;color:#eef3f2;background:radial-gradient(circle at 12% 18%,rgba(26,181,168,.2),transparent 34%),radial-gradient(circle at 83% 70%,rgba(197,146,60,.14),transparent 32%),linear-gradient(145deg,#061820,#02080d 64%);display:flex;flex-direction:column;gap:28px}.coverBrand{display:flex;align-items:center;gap:15px;padding-bottom:18px;border-bottom:1px solid rgba(103,210,202,.25)}.coverBrand img{width:64px;height:64px;object-fit:contain}.coverBrand div{display:flex;flex-direction:column;gap:4px}.coverBrand b{font-size:22px;letter-spacing:.08em}.coverBrand span{font-size:11px;letter-spacing:.16em;color:#8eb1b5}.coverBrand em{margin-left:auto;font-style:normal;font-size:13px;letter-spacing:.12em;color:#8eb1b5}.coverCopy{flex:1;display:flex;flex-direction:column;justify-content:center;max-width:1500px}.coverCopy>p:first-child{margin:0 0 14px;color:#36d9cf;font-size:13px;font-weight:700;letter-spacing:.18em}.coverCopy h1{max-width:980px;margin:0 0 42px;font:400 clamp(44px,5.1vw,84px)/1.02 Georgia,'Times New Roman',serif;letter-spacing:-.035em;color:#f0eee8}.coverMetrics{display:grid;grid-template-columns:.8fr .8fr 1.25fr 1.25fr 1.1fr;gap:12px}.coverMetrics article{min-width:0;padding:19px 20px;border:1px solid #23525a;border-radius:10px;background:rgba(3,17,23,.72)}.coverMetrics span{display:block;min-height:29px;font-size:11px;line-height:1.35;letter-spacing:.08em;color:#91aeb3}.coverMetrics strong{display:block;margin-top:8px;font-size:clamp(25px,2.35vw,43px);line-height:1.1;color:#65efe6;white-space:nowrap}.coverMetrics .gold{border-color:#6e552d}.coverMetrics .gold strong{color:#efbd69}.coverDefinition{margin:17px 0 0!important;font-size:13px;color:#9db3b7}.coverFoot{font-size:12px;line-height:1.5;color:#829da3}
 .august .augBody{height:calc(100vh - 82px);padding:18px 36px 12px 28px;display:flex;flex-direction:column;gap:13px;overflow:auto;scrollbar-width:thin}
 .august .augKpis{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
 .augKpi{background:#0a1921;border:1px solid #284a55;border-top:2px solid #22dfd0;border-radius:7px;padding:17px 18px}.augKpi>span{font-size:12px;letter-spacing:.08em;color:#adc3c8;font-weight:700}.augKpi strong{display:block;font-size:clamp(28px,2.7vw,46px);color:#75fff4;margin:13px 0 7px;white-space:nowrap}.augKpi p{font-size:12px;color:#9fb4ba;margin:0}.augKpi.gold{border-top-color:#dfad50}.augKpi.gold strong{color:#e9b75e}
@@ -193,7 +216,7 @@ css='''
 .augustSummary{background:radial-gradient(ellipse at 18% 43%,#09272e 0,transparent 48%),#020b12;overflow:auto!important}.augSummaryInner{min-height:100vh;max-width:1800px;margin:auto;padding:22px 42px 16px;display:flex;flex-direction:column;gap:14px}.augSummaryBrand{display:flex;gap:14px;align-items:center;border-bottom:1px solid #19313a;padding-bottom:12px}.augSummaryBrand img{width:56px;height:56px;object-fit:contain}.augSummaryBrand span{font-size:20px;letter-spacing:.07em}.augSummaryBrand em{font-style:normal;color:#22dfd0}.augSummaryBrand .augSummaryIndex{margin-left:auto;font-size:13px;color:#8ba7b1}.augSummaryTitle{display:flex;align-items:baseline;justify-content:space-between;gap:20px}.augSummaryTitle h1{font:400 clamp(46px,5.4vw,88px)/1.05 Georgia,'Times New Roman',serif;letter-spacing:-.035em;margin:5px 0;color:#ebe9e3}.augSummaryTitle p{font-size:17px;color:#aec1c7;margin:0}.augSummaryMain{display:grid;grid-template-columns:1.65fr 1fr;gap:16px;flex:1}.augHeroMetric,.augSummaryRight article,.augSummaryBottom article{border:1px solid #24636c;border-radius:13px;background:rgba(3,14,21,.66);padding:24px}.augHeroMetric>span,.augSummaryRight article>span{font-size:17px;letter-spacing:.07em;color:#22dfd0}.augHeroMetric>strong{display:block;font-size:clamp(62px,7.5vw,124px);letter-spacing:-.045em;color:#35ded8;line-height:1.2;margin:16px 0 8px}.augHeroMetric>p{font-size:26px;color:#75fff4;margin:0 0 22px}.augHeroMetric>div{display:flex;align-items:baseline;gap:10px;font-size:19px;color:#c0cdd0}.augHeroMetric small{font-size:13px;color:#89a8b3;margin-left:auto}.augSummaryRight{display:grid;grid-template-rows:1fr;gap:14px}.augSummaryRight .augGold{border-color:#806231;padding:20px 24px;display:flex;flex-direction:column;justify-content:center}.augGold>strong{display:block;font-size:clamp(33px,3.5vw,57px);letter-spacing:-.025em;line-height:1.2;color:#efbd69;margin:9px 0}.augGold>p{font-size:13px;color:#bdb9a9;margin:0;line-height:1.45}.augSummaryRight .augGold>span{color:#eabb6e;font-size:15px}.augSummaryBottom{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}.augSummaryBottom article{padding:18px 21px}.augSummaryBottom h3{font-size:14px;letter-spacing:.025em;color:#43d9d5;margin:0 0 14px;font-weight:500}.augSummaryBottom p{font-size:14px;color:#c5d0d2;margin:10px 0 0}.augTopValue{font-size:30px;color:#75fff4;white-space:nowrap}.augTopValue small{font-size:12px;color:#adc3ca;margin-left:8px}.augSummaryBottom ol{list-style:none;counter-reset:rank;margin:0;padding:0}.augSummaryBottom li{counter-increment:rank;display:flex;gap:9px;align-items:baseline;font-size:15px;padding:6px 0}.augSummaryBottom li:before{content:counter(rank);color:#22dfd0}.augSummaryBottom li b{font-weight:500;margin-left:auto;white-space:nowrap}.augSummaryFoot{color:#9bb2bc;font-size:12px;line-height:1.6;display:flex;flex-direction:column}
 @media(min-height:850px){.augSummaryInner{gap:20px;padding-top:30px;padding-bottom:24px}.augSummaryMain{min-height:365px}.augSummaryBottom article{padding-top:23px;padding-bottom:23px}}
 @media(max-height:800px){.august .augBody{height:calc(100vh - 74px);gap:10px;padding-top:12px}.augKpi{padding:12px 15px}.augKpi strong{margin:9px 0 5px}.augPairs>div{padding:9px 0}.augFinanceGrid{min-height:310px}.augSummaryInner{gap:10px;padding-top:15px}.augSummaryBrand{padding-bottom:8px}.augSummaryBrand img{height:44px;width:44px}.augSummaryTitle h1{font-size:62px}.augHeroMetric,.augSummaryRight article{padding:18px}.augHeroMetric>strong{font-size:88px}.augHeroMetric>p{margin-bottom:16px}.augSummaryBottom article{padding:13px 18px}.augSummaryBottom h3{margin-bottom:9px}}
-@media(max-width:800px){.siteShell:has(.august.active),.siteShell:has(.augustSummary.active){min-width:0}.august .appbar{height:auto;min-height:112px;padding:12px 20px;flex-wrap:wrap;gap:10px}.august .brand{min-width:0}.august .brand img{width:36px;height:36px}.august .brand div{display:none}.august .titleBlock h2{font-size:24px}.august .titleBlock{padding-left:12px}.august .viewTabs{margin-left:auto}.august .viewTabs button{padding:9px;font-size:12px}.august .spacer{display:none}.august .augBody{height:calc(100dvh - 112px);padding:14px 26px 20px 14px}.august .augKpis{grid-template-columns:1fr 1fr}.augKpi strong{font-size:27px}.augKpi>span{font-size:12px}.augFinanceGrid{display:flex;flex-direction:column;min-height:0;flex:none}.augFinanceGrid .augPanel{flex:none}.augNotice{display:block}.augNotice b{display:block}.august .cutTabs{height:auto;min-height:48px}.august .cutTabs button{padding:8px;gap:4px;flex-wrap:wrap}.august .cutTabs button span{font-size:12px}.august .dataTable td{font-size:13px}.august .dataTable th{font-size:12px}.augSummaryInner{padding:18px 26px 24px 18px;min-height:100dvh;gap:17px}.augSummaryBrand span{font-size:13px}.augSummaryBrand img{height:38px;width:38px}.augSummaryBrand .augSummaryIndex{display:none}.augSummaryTitle{display:block}.augSummaryTitle h1{font-size:43px;margin-bottom:10px}.augSummaryTitle p{font-size:15px}.augSummaryMain{grid-template-columns:1fr}.augHeroMetric>strong{font-size:70px}.augHeroMetric>div{font-size:16px;flex-wrap:wrap}.augSummaryRight{grid-template-columns:1fr;grid-template-rows:auto}.augGold>strong{font-size:40px}.augSummaryBottom{grid-template-columns:1fr}.augSummaryBottom h3{font-size:15px}.augSummaryBottom li{font-size:16px}.augSummaryFoot{font-size:12px}}
+@media(max-width:800px){.siteShell:has(.cover.active),.siteShell:has(.august.active),.siteShell:has(.augustSummary.active){min-width:0}.reportCover{height:100dvh;padding:20px 25px 20px 18px;gap:18px;overflow:auto}.coverBrand img{width:45px;height:45px}.coverBrand b{font-size:17px}.coverBrand em{display:none}.coverCopy{justify-content:flex-start}.coverCopy h1{font-size:42px;margin-bottom:26px}.coverMetrics{grid-template-columns:1fr 1fr}.coverMetrics article{padding:15px}.coverMetrics article:nth-child(3){grid-column:span 2}.coverMetrics strong{font-size:28px}.august .appbar{height:auto;min-height:112px;padding:12px 20px;flex-wrap:wrap;gap:10px}.august .brand{min-width:0}.august .brand img{width:36px;height:36px}.august .brand div{display:none}.august .titleBlock h2{font-size:24px}.august .titleBlock{padding-left:12px}.august .viewTabs{margin-left:auto}.august .viewTabs button{padding:9px;font-size:12px}.august .spacer{display:none}.august .augBody{height:calc(100dvh - 112px);padding:14px 26px 20px 14px}.august .augKpis{grid-template-columns:1fr 1fr}.augKpi strong{font-size:27px}.augKpi>span{font-size:12px}.augFinanceGrid{display:flex;flex-direction:column;min-height:0;flex:none}.augFinanceGrid .augPanel{flex:none}.augNotice{display:block}.augNotice b{display:block}.august .cutTabs{height:auto;min-height:48px}.august .cutTabs button{padding:8px;gap:4px;flex-wrap:wrap}.august .cutTabs button span{font-size:12px}.august .dataTable td{font-size:13px}.august .dataTable th{font-size:12px}.augSummaryInner{padding:18px 26px 24px 18px;min-height:100dvh;gap:17px}.augSummaryBrand span{font-size:13px}.augSummaryBrand img{height:38px;width:38px}.augSummaryBrand .augSummaryIndex{display:none}.augSummaryTitle{display:block}.augSummaryTitle h1{font-size:43px;margin-bottom:10px}.augSummaryTitle p{font-size:15px}.augSummaryMain{grid-template-columns:1fr}.augHeroMetric>strong{font-size:70px}.augHeroMetric>div{font-size:16px;flex-wrap:wrap}.augSummaryRight{grid-template-columns:1fr;grid-template-rows:auto}.augGold>strong{font-size:40px}.augSummaryBottom{grid-template-columns:1fr}.augSummaryBottom h3{font-size:15px}.augSummaryBottom li{font-size:16px}.augSummaryFoot{font-size:12px}}
 '''
 
 result=source.replace('</style>',css+'</style>',1)
