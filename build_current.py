@@ -66,7 +66,7 @@ def stats(rows):
     result = {"bookings": len(rows)}
     for key in ("tourists", "sales", "net", "profit", "received", "debt", "paid"):
         result[key] = sum((row[key] or 0) for row in rows)
-    result["average"] = result["sales"] / result["bookings"]
+    result["average"] = result["sales"] / result["tourists"]
     result["margin"] = result["profit"] / result["sales"] * 100
     result["partner_debt"] = result["net"] - result["paid"]
     return result
@@ -150,7 +150,7 @@ def kpi(label, value, note, css=""):
 def dashboard(rows, number, month, period, comparison, marketing=None):
     current = stats(rows)
     sales_change = (current["sales"] / comparison["sales"] - 1) * 100
-    avg_change = (current["average"] / (comparison["sales"] / comparison["bookings"]) - 1) * 100
+    avg_change = (current["average"] / (comparison["sales"] / comparison["tourists"]) - 1) * 100
     tourist_change = (current["tourists"] / comparison["tourists"] - 1) * 100
     profit_change = (current["profit"] / comparison["profit"] - 1) * 100
     finance_pairs = "".join(pair(label, value) for label, value in (
@@ -212,7 +212,7 @@ def ranking(rows, key, exclude=()):
 def summary(rows, number, month, month_number, comparison, marketing=None):
     current = stats(rows)
     sales_change = (current["sales"] / comparison["sales"] - 1) * 100
-    avg_change = (current["average"] / (comparison["sales"] / comparison["bookings"]) - 1) * 100
+    avg_change = (current["average"] / (comparison["sales"] / comparison["tourists"]) - 1) * 100
     top_directions = grouped(rows, "direction")[:3]
     top_value = sum(values["sales"] for _, values in top_directions)
     own = sum(row["sales"] for row in rows if row["partner"] == "Turon")
@@ -252,6 +252,16 @@ def main():
     }
     for number, content in replacements.items():
         html = replace_screen(html, number, content.replace("{logo}", logo))
+    for old, new in (
+        ("$4 913", "$1 345"), ("$4&nbsp;913", "$1&nbsp;345"),
+        ("$3 480", "$1 105"), ("$3&nbsp;480", "$1&nbsp;105"),
+        ("−29,2%", "−17,8%"),
+    ):
+        html = html.replace(old, new)
+    html = html.replace("СРЕДНИЙ ЧЕК НА ТУРИСТА", "СРЕДНИЙ ЧЕК")
+    html = html.replace("Средний чек на туриста", "Средний чек")
+    html = html.replace("СРЕДНИЙ ЧЕК", "СРЕДНИЙ ЧЕК НА ТУРИСТА")
+    html = html.replace("Средний чек", "Средний чек на туриста")
     html = html.replace("ЧИСТАЯ ПРИБЫЛЬ", "ВАЛОВАЯ ПРИБЫЛЬ")
     html = html.replace("Чистая прибыль", "Валовая прибыль")
     cover_art = "cover-gross-profit-per-tourist-may-august-2026-v3.png"
