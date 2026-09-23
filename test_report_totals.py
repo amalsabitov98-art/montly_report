@@ -33,25 +33,38 @@ class ReportTotalsTest(unittest.TestCase):
         self.assertEqual(data["excludedBookingIds"], [])
         august = section(self.html, 7)
         for expected in (
-            "$166 788", "39 / 127", "$4 277", "$153 038", "$13 750",
+            "$166 788", "39 / 127", "$1 313", "$153 038", "$13 750",
             "$166 788", "$0",
         ):
             self.assertIn(expected, august)
-        for stale in ("$157 422", "37 / 124", "$4 255", "$144 300,20", "$12 847"):
+        for stale in ("$157 422", "37 / 124", "$4 255", "$4 277", "$144 300,20", "$12 847"):
             self.assertNotIn(stale, august)
-        self.assertIn("39 бронирований · 127 туристов", section(self.html, 8))
+        august_summary = section(self.html, 8)
+        self.assertIn("39 бронирований · 127 туристов", august_summary)
+        self.assertIn("$1 313", august_summary)
+        self.assertIn("+4,9%", august_summary)
         self.assertNotIn("$903", august + section(self.html, 8))
 
     def test_july_booking_metrics_are_corrected(self):
         july = section(self.html, 5)
         for expected in (
-            "$192 751", "154", "$12 901", "$4 101", "+105,2%", "+81,2%", "+17,9%",
+            "$192 751", "154", "$12 901", "$1 252", "+105,2%", "+81,2%", "+13,2%",
             "$179 850", "$192 751", "$168 788", "$0", "$11 062",
         ):
             self.assertIn(expected, july)
-        for stale in ("$208 751", "$13 001", "$4 014", "+122,2%", "+91,8%"):
+        for stale in ("$208 751", "$13 001", "$4 014", "$4 101", "+122,2%", "+91,8%", "+17,9%"):
             self.assertNotIn(stale, july)
         self.assertNotIn("$903", july)
+
+    def test_average_check_is_sales_per_tourist_in_every_month(self):
+        may = section(self.html, 1)
+        june = section(self.html, 3)
+        self.assertIn("СРЕДНИЙ ЧЕК НА ТУРИСТА", may)
+        self.assertIn("$1 345", may)
+        self.assertNotIn("$4 913", may)
+        self.assertIn("$1 105", june)
+        self.assertIn("−17,8%", june)
+        self.assertNotIn("$3 480", june)
 
     def test_july_summary_matches_corrected_dashboard(self):
         july_summary = section(self.html, 6)
